@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "titulo": "Acoso en oficina",
+    "fecha": "2024-09-10",
+    "estado": "En revisión"
+  },
+  {
+    "id": 2,
+    "titulo": "Comentarios inapropiados",
+    "fecha": "2024-09-05",
+    "estado": "Pendiente"
+  }
+]
