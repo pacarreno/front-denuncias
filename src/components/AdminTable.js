@@ -7,13 +7,23 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import adminData from "../mock/adminData.json";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../firebaseConfig"; // Importa tu configuración de Firebase
 
 const AdminTable = () => {
   const [denuncias, setDenuncias] = useState([]);
 
   useEffect(() => {
-    setDenuncias(adminData);
+    const fetchDenuncias = async () => {
+      const querySnapshot = await getDocs(collection(db, "denuncias"));
+      const denunciasList = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setDenuncias(denunciasList);
+    };
+
+    fetchDenuncias();
   }, []);
 
   return (
@@ -24,7 +34,7 @@ const AdminTable = () => {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Título</TableCell>
+            <TableCell>Id Confidencial</TableCell>
             <TableCell>Estado</TableCell>
             <TableCell>Etapa</TableCell>
             <TableCell>Días Restantes</TableCell>
@@ -33,7 +43,7 @@ const AdminTable = () => {
         <TableBody>
           {denuncias.map((denuncia) => (
             <TableRow key={denuncia.id}>
-              <TableCell>{denuncia.titulo}</TableCell>
+              <TableCell>{denuncia.idConfidencial}</TableCell>
               <TableCell>{denuncia.estado}</TableCell>
               <TableCell>{denuncia.etapa}</TableCell>
               <TableCell>{denuncia.diasRestantes}</TableCell>
