@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../../firebaseConfig"; // Importa tanto Firestore como Storage
+import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import {
   TextField,
@@ -18,13 +19,14 @@ import {
   FormControl,
 } from "@mui/material";
 
-const CrearDenuncia = () => {
+const NewDenuncia = () => {
   const [denunciante, setDenunciante] = useState("");
   const [denunciado, setDenunciado] = useState("");
   const [relacion, setRelacion] = useState("");
   const [relato, setRelato] = useState("");
   const [pruebas, setPruebas] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const navigate = useNavigate();
 
   // Lista de posibles relaciones laborales
   const relacionesLaborales = [
@@ -63,6 +65,7 @@ const CrearDenuncia = () => {
       alert(
         `Denuncia ingresada correctamente. Su ID confidencial es: ${idConfidencial}`
       );
+      navigate("/denunciante");
     } catch (error) {
       console.error("Error al guardar denuncia: ", error);
     }
@@ -198,4 +201,4 @@ const CrearDenuncia = () => {
   );
 };
 
-export default CrearDenuncia;
+export default NewDenuncia;

@@ -34,6 +34,7 @@ module.exports = {
     compress: true,
     port: 3000,
     open: true, // Esto abrirá el navegador automáticamente
+    historyApiFallback: true,
   },
   mode: "development",
 };
