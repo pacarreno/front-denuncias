@@ -3,7 +3,7 @@ import { collection, addDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../../firebaseConfig"; // Importa tanto Firestore como Storage
 import { useNavigate } from "react-router-dom";
-import { v4 as uuidv4 } from "uuid";
+import { generarNumeroConfidencial } from "../utils/generator.js"
 import {
   TextField,
   Button,
@@ -43,10 +43,10 @@ const NewDenuncia = () => {
     e.preventDefault();
     setUploading(true);
 
-    const idConfidencial = uuidv4();
+    const idConfidencial = await generarNumeroConfidencial();
 
     const pruebasURLs = await Promise.all(
-      pruebas.map((file) => subirArchivo(file))
+      pruebas.map((file) => subirArchivo(file, idConfidencial))
     );
 
     const nuevaDenuncia = {
@@ -77,9 +77,9 @@ const NewDenuncia = () => {
     setPruebas([...e.target.files]);
   };
 
-  const subirArchivo = (file) => {
+  const subirArchivo = (file, idConfidencial) => {
     return new Promise((resolve, reject) => {
-      const storageRef = ref(storage, `pruebas/${file.name}-${uuidv4()}`);
+      const storageRef = ref(storage, `pruebas/${idConfidencial}/${file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on(
@@ -167,7 +167,7 @@ const NewDenuncia = () => {
                 <input
                   type="file"
                   onChange={handleFileChange}
-                  accept=".pdf,.jpg,.jpeg,.png,.mp3,.wav"
+                  accept=".pdf,.jpg,.jpeg,.png,.mp3,.wav,.docx"
                   multiple
                   hidden
                 />
