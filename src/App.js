@@ -1,73 +1,40 @@
-import React, {useState, useEffect} from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import Login from "./components/Login";
-import DenuncianteTable from "./components/DenuncianteTable";
-import AdminTable from "./components/AdminTable";
-import NewDenuncia from "./components/NewDenuncia";
-import { auth } from "../firebaseConfig";
 
-// Función para manejar rutas privadas
-const privateRoute = (isAuthenticated, Component, ...rest) => {
-  return isAuthenticated ? <Component {...rest} /> : <Navigate to="/login" />;
-};
+import React, { useState } from 'react';
+import { Denuncia, EstadosDenuncia } from './denunciaEstados';
+import Bitacora from './components/Bitacora';
 
 const App = () => {
-  const [user, setUser] = useState(null); 
-  const [loading, setLoading] = useState(true);
-  const isAuthenticated = !!user;
+  const [denuncia, setDenuncia] = useState(new Denuncia({ id: 'DEN-12345' }));
 
-  console.log("isAuth " + isAuthenticated);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      setUser(currentUser);
-      setLoading(false); 
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  if (loading) {
-    return <div>Loading...</div>; // Puedes mostrar un loading spinner aquí
-  }
+  const realizarAccion = (accion) => {
+    try {
+      denuncia.transicionar(accion);
+      setDenuncia({ ...denuncia });
+    } catch (error) {
+      alert(error.message);
+    }
+  };
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route
-        path="/denunciante"
-        element={privateRoute(isAuthenticated, DenuncianteTable)}
-      />
-      <Route
-        path="/nueva_denuncia"
-        element={privateRoute(isAuthenticated, NewDenuncia)}
-      />
-      <Route
-        path="/admin"
-        element={privateRoute(isAuthenticated, AdminTable)}
-      />
+    <div>
+      <h1>Gestión de Denuncias</h1>
+      <p>ID Denuncia: {denuncia.id}</p>
+      <p>Estado Actual: {denuncia.estado}</p>
 
-      <Route
-        path="/"
-        element={
-          !user ? (
-            <Login />
-          ) : (
-            <Navigate
-              to={user.email === "admin@manon.cl" ? "/admin" : "/denunciante"}
-            />
-          )
-        }
-      />
+      <div>
+        <button onClick={() => realizarAccion('revisar')}>Revisar</button>
+        <button onClick={() => realizarAccion('derivar_a_inspeccion')}>
+          Derivar a Inspección
+        </button>
+        <button onClick={() => realizarAccion('investigacion_interna')}>
+          Investigación Interna
+        </button>
+      </div>
 
-      {/* Redireccionar cualquier ruta desconocida al login */}
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+      <Bitacora historial={denuncia.historial} />
+    </div>
   );
 };
 
 export default App;
+    
