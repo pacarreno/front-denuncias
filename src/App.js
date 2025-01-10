@@ -1,40 +1,73 @@
+import React, {useState, useEffect} from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Login from "./components/Login";
+import DenuncianteTable from "./components/DenuncianteTable";
+import AdminTable from "./components/AdminTable";
+import NewDenuncia from "./components/NewDenuncia";
+import { auth } from "../firebaseConfig";
 
-import React, { useState } from 'react';
-import { Denuncia, EstadosDenuncia } from './denunciaEstados';
-import Bitacora from './components/Bitacora';
+// Función para manejar rutas privadas
+const privateRoute = (isAuthenticated, Component, ...rest) => {
+  return isAuthenticated ? <Component {...rest} /> : <Navigate to="/login" />;
+};
 
 const App = () => {
-  const [denuncia, setDenuncia] = useState(new Denuncia({ id: 'DEN-12345' }));
+  const [user, setUser] = useState(null); 
+  const [loading, setLoading] = useState(true);
+  const isAuthenticated = !!user;
 
-  const realizarAccion = (accion) => {
-    try {
-      denuncia.transicionar(accion);
-      setDenuncia({ ...denuncia });
-    } catch (error) {
-      alert(error.message);
-    }
-  };
+  console.log("isAuth " + isAuthenticated);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+      setLoading(false); 
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>; // Puedes mostrar un loading spinner aquí
+  }
 
   return (
-    <div>
-      <h1>Gestión de Denuncias</h1>
-      <p>ID Denuncia: {denuncia.id}</p>
-      <p>Estado Actual: {denuncia.estado}</p>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/denunciante"
+        element={privateRoute(isAuthenticated, DenuncianteTable)}
+      />
+      <Route
+        path="/nueva_denuncia"
+        element={privateRoute(isAuthenticated, NewDenuncia)}
+      />
+      <Route
+        path="/admin"
+        element={privateRoute(isAuthenticated, AdminTable)}
+      />
 
-      <div>
-        <button onClick={() => realizarAccion('revisar')}>Revisar</button>
-        <button onClick={() => realizarAccion('derivar_a_inspeccion')}>
-          Derivar a Inspección
-        </button>
-        <button onClick={() => realizarAccion('investigacion_interna')}>
-          Investigación Interna
-        </button>
-      </div>
+      <Route
+        path="/"
+        element={
+          !user ? (
+            <Login />
+          ) : (
+            <Navigate
+              to={user.email === "admin@manon.cl" ? "/admin" : "/denunciante"}
+            />
+          )
+        }
+      />
 
-      <Bitacora historial={denuncia.historial} />
-    </div>
+      {/* Redireccionar cualquier ruta desconocida al login */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 };
 
 export default App;
-    

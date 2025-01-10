@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "titulo": "Acoso en oficina",
+    "estado": "En revisión",
+    "etapa": "Investigación",
+    "diasRestantes": 5
+  },
+  {
+    "id": 2,
+    "titulo": "Comentarios inapropiados",
+    "estado": "Pendiente",
+    "etapa": "Evaluación inicial",
+    "diasRestantes": 10
+  }
+]
