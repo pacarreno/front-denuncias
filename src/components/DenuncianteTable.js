@@ -1,31 +1,33 @@
-import React, { useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-  Link,
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-
-import { signOut } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db, auth } from "../../firebaseConfig"; // Importa tu configuración de Firebase
+import { db } from "../../firebaseConfig";
+import { useNavigate } from "react-router-dom";
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Paper,
+  Typography,
+  Box,
+  IconButton,
+  Modal,
+  Backdrop,
+  Fade,
+} from "@mui/material";
+import { getAuth, signOut } from "firebase/auth";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import EditIcon from "@mui/icons-material/Edit";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 
 const DenuncianteTable = () => {
   const [denuncias, setDenuncias] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [selectedDenuncia, setSelectedDenuncia] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
   const navigate = useNavigate();
+  const auth = getAuth();
 
   useEffect(() => {
     const fetchDenuncias = async () => {
@@ -43,187 +45,131 @@ const DenuncianteTable = () => {
   const handleLogout = () => {
     signOut(auth)
       .then(() => {
-        console.log("Sesión cerrada con éxito");
-        // Redirigir al usuario a la página de login o página de bienvenida
-        navigate("/login"); // Asegúrate de usar el hook de navegación (useNavigate)
+        navigate("/login");
       })
       .catch((error) => {
         console.error("Error al cerrar sesión:", error);
       });
   };
 
-  const onNewDenuncia = () => {
-    console.log("navigate ");
+  const handleNewDenuncia = () => {
     navigate("/nueva_denuncia");
   };
 
-  // Función para abrir el modal con el documento seleccionado
-  const handlePreviewClick = (docUrl) => {
-    setSelectedDoc(docUrl);
-    setOpen(true);
+  const handleViewDetails = (denuncia) => {
+    setSelectedDenuncia(denuncia);
+    setOpenModal(true);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-    setSelectedDoc(null);
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setSelectedDenuncia(null);
   };
 
-  // Función para forzar la descarga del archivo
-  const downloadInNewTab = (url) => {
-    const newWindow = window.open(url, "_blank"); // Abrir en nueva pestaña
-    if (newWindow) {
-      newWindow.focus(); // Asegura que la pestaña se traiga al frente
-    }
+  const handleEditDenuncia = (denuncia) => {
+    navigate("/nueva_denuncia", { state: { denuncia, editMode: true } });
   };
 
   return (
-    <>
-      <Box sx={{ display: "flex", justifyContent: "flex-end", padding: 2 }}>
-        <Button variant="contained" color="secondary" onClick={handleLogout}>
-          Cerrar Sesión
-        </Button>
+    <Box>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, p: 2 }}>
+        <IconButton
+          onClick={handleNewDenuncia}
+          color="primary"
+          sx={{ backgroundColor: "#f0f0f0", borderRadius: "50px", p: 1.5 }}
+        >
+          <AddCircleIcon fontSize="large" />
+        </IconButton>
+        <IconButton
+          onClick={handleLogout}
+          color="secondary"
+          sx={{ backgroundColor: "#f0f0f0", borderRadius: "50px", p: 1.5 }}
+        >
+          <ExitToAppIcon fontSize="large" />
+        </IconButton>
       </Box>
+
       <Typography variant="h4" gutterBottom>
-        Mis Denuncias
+        Lista de Denuncias del Denunciante
       </Typography>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Id de denuncia</TableCell>
-            <TableCell>Denunciado</TableCell>
-            <TableCell>Días restantes</TableCell>
-            <TableCell>Estado</TableCell>
-            <TableCell>Pruebas</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {denuncias.map((denuncia) => (
-            <TableRow key={denuncia.id}>
-              <TableCell>{denuncia.idConfidencial}</TableCell>
-              <TableCell>{denuncia.denunciado}</TableCell>
-              <TableCell>{denuncia.diasRestantes}</TableCell>
-              <TableCell>{denuncia.estado}</TableCell>
-              <TableCell>
-                {denuncia.pruebas.map((prueba, index) => (
-                  <Box key={index} mb={2}>
-                    <Link
-                      onClick={() => handlePreviewClick(prueba)}
-                      target="_blank"
-                      rel="noopener"
-                      sx={{ mr: 2 }}
-                    >
-                      Previsualizar
-                    </Link>
-                    <Link onClick={() => downloadInNewTab(prueba)}>
-                      Descargar
-                    </Link>
+      <Paper>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell align="center">ID Confidencial</TableCell>
+              <TableCell align="center">Fecha de Ingreso</TableCell>
+              <TableCell align="center">Estado</TableCell>
+              <TableCell align="center">Etapa</TableCell>
+              <TableCell align="center">Acción</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {denuncias.map((denuncia) => (
+              <TableRow key={denuncia.id}>
+                <TableCell align="center">{denuncia.idConfidencial}</TableCell>
+                <TableCell align="center">{denuncia.fechaIngreso || "No disponible"}</TableCell>
+                <TableCell align="center">{denuncia.estado}</TableCell>
+                <TableCell align="center">{denuncia.etapa}</TableCell>
+                <TableCell align="center">
+                  <IconButton
+                    color="primary"
+                    onClick={() => handleViewDetails(denuncia)}
+                    sx={{ marginRight: 1 }}
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
+                  <IconButton
+                    color="secondary"
+                    onClick={() => handleEditDenuncia(denuncia)}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Paper>
+
+      {/* Modal para ver detalles de la denuncia */}
+      <Modal
+        open={openModal}
+        onClose={handleCloseModal}
+        closeAfterTransition
+        BackdropComponent={Backdrop}
+        BackdropProps={{ timeout: 500 }}
+      >
+        <Fade in={openModal}>
+          <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 400, bgcolor: "background.paper", boxShadow: 24, p: 4, borderRadius: 2 }}>
+            {selectedDenuncia && (
+              <>
+                <Typography variant="h6" gutterBottom>
+                  Detalles de la Denuncia
+                </Typography>
+                <Typography><strong>Fecha de Ingreso:</strong> {selectedDenuncia.fechaIngreso || "No disponible"}</Typography>
+                <Typography><strong>Nombre del Denunciante:</strong> {selectedDenuncia.nombreDenunciante || "Anónimo"}</Typography>
+                <Typography><strong>Denunciado:</strong> {selectedDenuncia.denunciado || "No especificado"}</Typography>
+                <Typography><strong>Relato de los Hechos:</strong> {selectedDenuncia.relato || "No disponible"}</Typography>
+                <Typography><strong>Pruebas:</strong></Typography>
+                {selectedDenuncia.pruebas?.map((prueba, index) => (
+                  <Box key={index} mb={1}>
+                    <a href={prueba} target="_blank" rel="noopener noreferrer">
+                      Ver Prueba {index + 1}
+                    </a>
                   </Box>
                 ))}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={onNewDenuncia}
-        sx={{ mt: 2 }}
-      >
-        Nueva Denuncia
-      </Button>
-      {/* Modal para la previsualización de documentos */}
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-        <DialogTitle>
-          Previsualización de Documento
-          <IconButton
-            aria-label="close"
-            onClick={handleClose}
-            sx={{ position: "absolute", right: 8, top: 8 }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          {selectedDoc && renderDocumentPreview(selectedDoc)}
-        </DialogContent>
-      </Dialog>
-    </>
+                <Box mt={2} textAlign="right">
+                  <IconButton color="primary" onClick={handleCloseModal}>
+                    Cerrar
+                  </IconButton>
+                </Box>
+              </>
+            )}
+          </Box>
+        </Fade>
+      </Modal>
+    </Box>
   );
-};
-/*
-const renderDocumentPreview = (prueba) => {
-  const tipo = prueba.includes("pdf") ? "application/pdf" : "image/";
-  const url = prueba;
-
-  if (tipo === "application/pdf") {
-    return (
-      <iframe
-        src={url}
-        title="PDF Preview"
-        width="100%"
-        height="500"
-        style={{ border: "none" }}
-      ></iframe>
-    );
-  } else if (tipo.startsWith("image/")) {
-    return <img src={url} alt="Prueba" style={{ width: "100%" }} />;
-  } else if (tipo.startsWith("audio/")) {
-    return <audio controls src={url} />;
-  } else {
-    return <Typography variant="body2">Archivo no soportado</Typography>;
-  }
-};
-*/
-const renderDocumentPreview = (prueba) => {
-  const getFileType = (url) => {
-    const decodedUrl = decodeURIComponent(url); // Decodificar caracteres especiales en la URL
-    const fileName = decodedUrl.split("/").pop().split("?")[0]; // Extraer el nombre del archivo
-    const extension = fileName.split(".").pop().toLowerCase(); // Obtener la extensión
-    if (extension === "pdf") return "application/pdf";
-    if (["jpg", "jpeg", "png", "gif", "bmp"].includes(extension))
-      return "image/";
-    if (["mp3", "wav", "ogg"].includes(extension)) return "audio/";
-    if (["doc", "docx"].includes(extension)) return "application/msword";
-    return "unsupported";
-  };
-
-  const tipo = getFileType(prueba);
-  const url = prueba;
-
-  console.log(`previsualizando ${prueba} con el tipo ${tipo}`);
-
-  if (tipo === "application/pdf") {
-    return (
-      <iframe
-        src={url}
-        title="PDF Preview"
-        width="100%"
-        height="500"
-        style={{ border: "none" }}
-      ></iframe>
-    );
-  } else if (tipo.startsWith("image/")) {
-    return <img src={url} alt="Prueba" style={{ width: "100%" }} />;
-  } else if (tipo.startsWith("audio/")) {
-    return <audio controls src={url} />;
-  } else if (tipo === "application/msword") {
-    // Usar el visor de Google Docs para Word
-    const googleDocsViewer = `https://docs.google.com/gview?url=${encodeURIComponent(
-      url
-    )}&embedded=true`;
-    return (
-      <iframe
-        src={googleDocsViewer}
-        title="Word Document Preview"
-        width="100%"
-        height="500"
-        style={{ border: "none" }}
-      ></iframe>
-    );
-  } else {
-    return <Typography variant="body2">Archivo no soportado</Typography>;
-  }
 };
 
 export default DenuncianteTable;

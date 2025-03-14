@@ -1,73 +1,80 @@
-import React, {useState, useEffect} from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Login from "./components/Login";
 import DenuncianteTable from "./components/DenuncianteTable";
 import AdminTable from "./components/AdminTable";
+import InvestigadorTable from "./components/InvestigadorTable";
+import InvestigacionInterna from "./components/InvestigacionInterna";
+import RegistrarResultado from "./components/RegistrarResultado";
 import NewDenuncia from "./components/NewDenuncia";
 import { auth } from "../firebaseConfig";
 
-// Función para manejar rutas privadas
-const privateRoute = (isAuthenticated, Component, ...rest) => {
-  return isAuthenticated ? <Component {...rest} /> : <Navigate to="/login" />;
-};
-
 const App = () => {
-  const [user, setUser] = useState(null); 
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const isAuthenticated = !!user;
-
-  console.log("isAuth " + isAuthenticated);
+  const location = useLocation();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
-      setLoading(false); 
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>; // Puedes mostrar un loading spinner aquí
+    return <div>Loading...</div>;
   }
+
+  const isAuthRequired = !location.state?.skipAuth;
 
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route
         path="/denunciante"
-        element={privateRoute(isAuthenticated, DenuncianteTable)}
+        element={user?.email === "denunciante@manon.cl" ? <DenuncianteTable /> : <Navigate to="/login" />}
       />
       <Route
         path="/nueva_denuncia"
-        element={privateRoute(isAuthenticated, NewDenuncia)}
+        element={user?.email === "denunciante@manon.cl" ? <NewDenuncia /> : <Navigate to="/login" />}
       />
       <Route
         path="/admin"
-        element={privateRoute(isAuthenticated, AdminTable)}
+        element={user?.email === "admin@manon.cl" ? <AdminTable /> : <Navigate to="/login" />}
       />
-
+      <Route
+        path="/investigador"
+        element={user?.email === "investigador@manon.cl" ? <InvestigadorTable /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/investigacion/:id"
+        element={user?.email === "investigador@manon.cl" ? <InvestigacionInterna /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/registrarresultado/:id"
+        element={isAuthRequired && !user ? <Navigate to="/login" /> : <RegistrarResultado />}
+      />
       <Route
         path="/"
-        element={
-          !user ? (
-            <Login />
-          ) : (
-            <Navigate
-              to={user.email === "admin@manon.cl" ? "/admin" : "/denunciante"}
-            />
-          )
-        }
+        element={user ? <Navigate to={getRedirectPath(user.email)} /> : <Login />}
       />
-
-      {/* Redireccionar cualquier ruta desconocida al login */}
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
+};
+
+const getRedirectPath = (email) => {
+  if (email === "denunciante@manon.cl") {
+    return "/denunciante";
+  } else if (email === "admin@manon.cl") {
+    return "/admin";
+  } else if (email === "investigador@manon.cl") {
+    return "/investigador";
+  } else {
+    return "/login";
+  }
 };
 
 export default App;
