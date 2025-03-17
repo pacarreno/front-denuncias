@@ -1,37 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button, TextField, Typography, Box } from "@mui/material";
-
 import { useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebaseConfig";
+import { auth } from "../../firebaseConfig"; // Configuración de Firebase
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate =  useNavigate();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      // Usuario autenticado
+      // Autenticar usuario con Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      console.log("User logged in: ", user);
+
+      console.log("Usuario autenticado:", user);
+
       setError("");
-      // Redireccionar según el rol (mock)
+
+      // Redirigir según el correo electrónico
       if (user.email === "denunciante@manon.cl") {
-        console.log("denunciante");
         navigate("/denunciante");
       } else if (user.email === "admin@manon.cl") {
         navigate("/admin");
+      } else if (user.email === "investigador@manon.cl") {
+        navigate("/investigador");
+      } else {
+        setError("Correo electrónico no autorizado.");
       }
     } catch (error) {
-      setError("Usuario o contraseña incorrecta");
+      console.error("Error al iniciar sesión:", error);
+      setError("Usuario o contraseña incorrecta.");
     }
   };
 
@@ -44,27 +46,30 @@ const Login = () => {
         flexDirection: "column",
         maxWidth: 400,
         margin: "auto",
+        mt: 4,
       }}
     >
-      <Typography variant="h4" mb={2}>
-        Gestión de casos de la ley Karin
+      <Typography variant="h4" align="center" gutterBottom>
+      Gestión de casos de la ley Karin
       </Typography>
       <TextField
-        label="Email"
+        label="Correo Electrónico"
         variant="outlined"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         fullWidth
         margin="normal"
+        autoComplete="off"
       />
       <TextField
-        label="Password"
+        label="Contraseña"
         variant="outlined"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         fullWidth
         margin="normal"
+        autoComplete="off"
       />
       {error && <Typography color="error">{error}</Typography>}
       <Button type="submit" variant="contained" color="primary" fullWidth>
